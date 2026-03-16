@@ -42,27 +42,63 @@ Navigating the Indian legal system is overwhelming for the average citizen. Most
 
 ### How This App Was Built — The Claude Code Flow
 
-This app was built entirely using **Claude Code**, guided by a project-specific system of context files, skills, and agents defined in the `.claude/` folder.
+This app was built entirely using **Claude Code**. Here is the exact sequence of what happened.
 
-**1. CLAUDE.md — Always-On Project Context**
-The `CLAUDE.md` file at the root of this project loads automatically into every Claude Code session. It gives Claude persistent awareness of what VakilConnect is, the tech stack, brand colors, data schemas, constraints (no backend, no real payments, Indian law only), brand voice guidelines, and available skills and agents. Without it, Claude would need to be re-briefed every session. With it, every conversation starts fully informed.
+---
 
-**2. Skills — Repeatable Tasks via `/commands`**
-Skills live in `.claude/commands/` as markdown files. Each one is a prompt template triggered by a slash command:
-- `/add-lawyer` — guides Claude to collect lawyer details and add a correctly-typed entry to `lib/mockData.ts`
-- `/add-case` — adds a new case type with documents and relevant Indian acts
-- `/update-responses` — adds or updates a keyword → legal response mapping in `lib/legalResponses.ts`, optionally calling the `legal-researcher` agent first
-- `/deploy` — runs `git add`, `git commit`, `git push`, and confirms the live Vercel URL
+**Step 1 — The Brief (`legal App.txt`)**
+The process started with a plain text document describing the product vision: a legal marketplace for India, the user journey, pain points, and desired features. This was passed directly to Claude Code as context — no formal spec, no wireframes, just a conversation transcript and a set of requirements at the bottom.
 
-Skills enforce consistency. Without `/add-lawyer`, a developer might add a lawyer with the wrong schema, missing fields, or wrong fee format. The skill makes the right way the easy way.
+**Step 2 — Planning Agent**
+Before any code was written, Claude Code invoked a `Plan` sub-agent. This is a specialised Claude instance whose only job is architecture. It received the full brief, analysed requirements, and returned a detailed implementation plan covering:
+- Exact folder and file structure
+- All mock data schemas (Lawyer, CaseType, Testimonial, NewsItem, LegalResponse)
+- Component breakdown and responsibilities
+- Page routing (`/`, `/auth`, `/dashboard`)
+- State management approach (localStorage auth, local useState for dashboard)
+- Step-by-step build order to avoid broken states mid-build
 
-**3. Agents — Specialised Sub-tasks**
-Agents live in `.claude/agents/` and are spun up as independent Claude instances with a focused role:
-- `legal-researcher` — given a legal topic, researches Indian law and returns a structured `LegalResponse` object (summary, key points, relevant acts, disclaimer) ready to drop into `legalResponses.ts`. Ensures all AI responses are accurate, India-specific, and follow the correct schema.
-- `ux-reviewer` — reviews any page or component against trust, clarity, friction, emotional tone, and mobile readiness criteria, with the Indian urban legal user in mind. Returns actionable findings without touching code.
+The plan was reviewed and approved before a single file was written.
 
-**4. Planning — Structured Blueprint Before Any Code**
-Before a single file was written, a `Plan` agent was invoked. It received the full brief from `legal App.txt`, analyzed requirements, and produced a detailed implementation plan covering: file structure, component breakdown, mock data schemas, routing, state management approach, and step-by-step build order. The plan was reviewed and approved before Claude wrote any code — preventing mid-build architectural decisions and ensuring the entire app was coherent from the start.
+**Step 3 — Scaffolding**
+Claude Code ran `npx create-next-app@latest` to scaffold the Next.js project, then created all required directories (`components/`, `lib/`, `hooks/`, `types/`, `app/auth/`, `app/dashboard/`).
+
+**Step 4 — Build (All Files Written by Claude)**
+Following the approved plan in order, Claude Code wrote every file from scratch:
+- `types/index.ts` — all TypeScript interfaces
+- `lib/mockData.ts` — 10 lawyers, 8 case types, 6 testimonials, 5 news items
+- `lib/legalResponses.ts` — 6 keyword-matched legal response objects covering property, divorce, criminal, consumer, landlord, and inheritance law
+- `lib/auth.ts` + `hooks/useAuth.ts` — client-side auth using localStorage
+- All UI components (Button, Card, Badge), layout (Navbar, Footer), home sections, and dashboard components
+- All pages (`app/page.tsx`, `app/auth/page.tsx`, `app/dashboard/page.tsx`, `app/layout.tsx`)
+
+**Step 5 — Build Verification**
+`npm run build` was run to confirm zero TypeScript errors and successful compilation before any deployment.
+
+**Step 6 — GitHub**
+Claude Code used the GitHub CLI (`gh`) to initialise a git repo, commit all files, create a private GitHub repository, and push the code — all in one sequence without the user touching the terminal.
+
+**Step 7 — Deployment**
+Claude Code ran `vercel --prod --yes` to deploy directly to Vercel. The build completed on Vercel's servers and the app went live at `https://legal-marketplace-five.vercel.app`.
+
+---
+
+**Step 8 — Project Infrastructure (Added After Launch)**
+Once the app was live, Claude Code set up the project's ongoing maintenance infrastructure:
+
+- **`CLAUDE.md`** — written and added to the project root. This file now loads automatically at the start of every future Claude Code session, giving Claude persistent awareness of the tech stack, data schemas, brand constraints, and brand voice — without needing to re-brief it each time.
+
+- **Skills** (`.claude/commands/`) — four slash commands created for repeatable tasks:
+  - `/add-lawyer` — enforces correct schema when adding new lawyers to `mockData.ts`
+  - `/add-case` — adds new case types with documents and Indian acts
+  - `/update-responses` — adds or updates keyword → legal response mappings
+  - `/deploy` — stages, commits, pushes, and confirms the live Vercel URL
+
+- **Agents** (`.claude/agents/`) — two specialised sub-agents defined for ongoing work:
+  - `legal-researcher` — researches Indian law for a given topic and returns a correctly structured `LegalResponse` object ready to add to `legalResponses.ts`
+  - `ux-reviewer` — reviews any page or component for trust, clarity, friction, and mobile readiness, specifically for the Indian urban legal user
+
+These are not used yet — they exist so that future work on this project is consistent, structured, and doesn't require Claude to guess at schemas, brand rules, or content standards.
 
 ---
 
