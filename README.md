@@ -42,19 +42,27 @@ Navigating the Indian legal system is overwhelming for the average citizen. Most
 
 ### How This App Was Built — The Claude Code Flow
 
-This app was built entirely using **Claude Code**, Anthropic's AI coding assistant, guided by a layered system of context and instructions:
+This app was built entirely using **Claude Code**, guided by a project-specific system of context files, skills, and agents defined in the `.claude/` folder.
 
 **1. CLAUDE.md — Always-On Project Context**
-The root `CLAUDE.md` file in this project loaded automatically at the start of every Claude Code session. It gave Claude persistent awareness of the Basecamp Coffee scenario, the constraints (no new budget, 3-month deadline), the brand voice, and the goals — so Claude never needed to be re-briefed between sessions.
+The `CLAUDE.md` file at the root of this project loads automatically into every Claude Code session. It gives Claude persistent awareness of what VakilConnect is, the tech stack, brand colors, data schemas, constraints (no backend, no real payments, Indian law only), brand voice guidelines, and available skills and agents. Without it, Claude would need to be re-briefed every session. With it, every conversation starts fully informed.
 
-**2. Skills — Lesson Scripts Injected on Demand**
-Lessons like `/start-2-2` (Plan) and `/start-2-3` (Build & Iterate) are Skills — markdown files in `.claude/commands/` that inject a full teaching script into the conversation when invoked. When `/start-2-3` was triggered, Claude received the full lesson flow including STOP points, expected user responses, and teaching instructions. Skills made repeatable, structured lessons possible without hardcoding behavior into Claude itself.
+**2. Skills — Repeatable Tasks via `/commands`**
+Skills live in `.claude/commands/` as markdown files. Each one is a prompt template triggered by a slash command:
+- `/add-lawyer` — guides Claude to collect lawyer details and add a correctly-typed entry to `lib/mockData.ts`
+- `/add-case` — adds a new case type with documents and relevant Indian acts
+- `/update-responses` — adds or updates a keyword → legal response mapping in `lib/legalResponses.ts`, optionally calling the `legal-researcher` agent first
+- `/deploy` — runs `git add`, `git commit`, `git push`, and confirms the live Vercel URL
 
-**3. Agents — Parallel Perspectives**
-During the research phase, three sub-agents were spun up simultaneously: `(ಠ_ಠ) Exec` (ROI focus), `(◠‿◠) Product Designer` (UX focus), and `(•‿•) Barista Lead` (ground-level customer reality). Each ran as an independent Claude instance with its own system prompt and tools, analyzed the loyalty program data from its perspective, and returned a synthesis. This is how the Coffee Personality Quiz concept was validated from three angles in parallel.
+Skills enforce consistency. Without `/add-lawyer`, a developer might add a lawyer with the wrong schema, missing fields, or wrong fee format. The skill makes the right way the easy way.
 
-**4. Planning — Structured Implementation Blueprint**
-Before any code was written, a `Plan` sub-agent analyzed the requirements, defined the file structure, component breakdown, mock data schemas, state management approach, and step-by-step build order. This plan was reviewed and approved before implementation began, preventing costly mid-build decisions.
+**3. Agents — Specialised Sub-tasks**
+Agents live in `.claude/agents/` and are spun up as independent Claude instances with a focused role:
+- `legal-researcher` — given a legal topic, researches Indian law and returns a structured `LegalResponse` object (summary, key points, relevant acts, disclaimer) ready to drop into `legalResponses.ts`. Ensures all AI responses are accurate, India-specific, and follow the correct schema.
+- `ux-reviewer` — reviews any page or component against trust, clarity, friction, emotional tone, and mobile readiness criteria, with the Indian urban legal user in mind. Returns actionable findings without touching code.
+
+**4. Planning — Structured Blueprint Before Any Code**
+Before a single file was written, a `Plan` agent was invoked. It received the full brief from `legal App.txt`, analyzed requirements, and produced a detailed implementation plan covering: file structure, component breakdown, mock data schemas, routing, state management approach, and step-by-step build order. The plan was reviewed and approved before Claude wrote any code — preventing mid-build architectural decisions and ensuring the entire app was coherent from the start.
 
 ---
 
